@@ -42,11 +42,11 @@ class ApplePushNotificationController extends Controller
             'push_type' => 'string',
         ]);
 
-        if ($request->get('access_key') !== env('APP_KEY')) {
-            return response()->json([
-                'message' => 'Key không chính xác'
-            ], 401);
-        }
+        // if ($request->get('access_key') !== env('APP_KEY')) {
+        //     return response()->json([
+        //         'message' => 'Key không chính xác'
+        //     ], 401);
+        // }
 
         $options = [
             'key_id' => env('APN_KEY_ID'), // The Key ID obtained from Apple developer account
