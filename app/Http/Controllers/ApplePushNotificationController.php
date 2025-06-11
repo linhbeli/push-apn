@@ -75,7 +75,9 @@ class ApplePushNotificationController extends Controller
         $notifications = [];
 
         foreach ($request->get('devices') as $deviceToken) {
-            $notifications[] = new Notification($payload, $deviceToken);
+            $notification = new Notification($payload, $deviceToken);
+            $notification->setPushType('voip');
+            $notifications[] = $notification;
         }
 
         $client = new Client($authProvider, $production = true, [CURLOPT_SSL_VERIFYPEER => false]);
