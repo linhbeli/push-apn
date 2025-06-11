@@ -63,7 +63,7 @@ class ApplePushNotificationController extends Controller
         }
 
         $pushType = $request->get('push_type', 'voip');
-        $apnsTopic = env('APN_BUNDLE_ID', 'com.getflycrm.voip');
+        $apnsTopic = "com.getflycrm.voip";
 
         $notifications = [];
 
