@@ -75,7 +75,8 @@ class ApplePushNotificationController extends Controller
                 $deviceToken,
                 [
                     'apns-push-type' => $pushType,
-                    'apns-topic' => $apnsTopic
+                    'apns-topic' => $apnsTopic,
+                    'apns-priority' => 10
                 ]
             );
 
