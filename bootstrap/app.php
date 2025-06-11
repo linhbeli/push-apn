@@ -24,6 +24,7 @@ $app = new Laravel\Lumen\Application(
 );
 
  $app->withFacades();
+class_alias(\Illuminate\Support\Facades\Log::class, 'Log');
 
 // $app->withEloquent();
 
