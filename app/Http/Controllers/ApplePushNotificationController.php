@@ -17,14 +17,6 @@ class ApplePushNotificationController extends Controller
     public function __construct()
     {}
 
-    /**
-     * Gửi thông báo APNs
-     *
-     * @param Request $request
-     * @return JsonResponse
-     * @throws InvalidPayloadException
-     * @throws ValidationException
-     */
     public function pushNotification(Request $request): JsonResponse
     {
         $this->validate($request, [
@@ -33,15 +25,14 @@ class ApplePushNotificationController extends Controller
             'devices.*' => 'string',
             'apn_data' => 'required|array',
             'sound' => 'sometimes|string',
-            'push_type' => 'sometimes|string',
+            'push_type' => 'sometimes|string', // alert, voip, background
         ]);
 
-        // Bảo vệ API bằng access_key nếu cần
+        // Kiểm tra access_key nếu cần
         // if ($request->get('access_key') !== env('APP_KEY')) {
         //     return response()->json(['message' => 'Key không chính xác'], 401);
         // }
 
-        // Thiết lập thông tin xác thực
         $options = [
             'key_id' => env('APN_KEY_ID'),
             'team_id' => env('APN_TEAM_ID'),
@@ -52,7 +43,6 @@ class ApplePushNotificationController extends Controller
 
         $authProvider = Token::create($options);
 
-        // Tạo payload
         $payload = Payload::create()
             ->setSound($request->get('sound', 'default'))
             ->setContentAvailability(1)
@@ -62,8 +52,12 @@ class ApplePushNotificationController extends Controller
             $payload->setCustomValue($key, $value);
         }
 
-        $pushType = $request->get('push_type', 'voip');
-        $apnsTopic = "com.getflycrm.voip";
+        $pushType = $request->get('push_type', 'alert');
+
+        // 🔄 Chọn đúng topic theo push_type
+        $apnsTopic = $pushType === 'voip'
+            ? env('APN_VOIP_TOPIC', env('APN_BUNDLE_ID'))
+            : env('APN_BUNDLE_ID');
 
         $notifications = [];
 
@@ -80,7 +74,6 @@ class ApplePushNotificationController extends Controller
             $notifications[] = $notification;
         }
 
-        // Khởi tạo client, production = true
         $client = new Client($authProvider, $production = true, [
             CURLOPT_SSL_VERIFYPEER => false
         ]);
