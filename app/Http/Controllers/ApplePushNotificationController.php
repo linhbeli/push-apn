@@ -11,6 +11,7 @@ use Pushok\InvalidPayloadException;
 use Pushok\Notification;
 use Pushok\Payload;
 use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Facades\Log;
 
 class ApplePushNotificationController extends Controller
 {
@@ -62,6 +63,13 @@ class ApplePushNotificationController extends Controller
         $notifications = [];
 
         foreach ($request->get('devices') as $deviceToken) {
+            \Log::info('Preparing push notification', [
+                'device_token' => $deviceToken,
+                'push_type' => $pushType,
+                'apns_topic' => $apnsTopic,
+                'payload' => $payload->getPayload(),
+            ]);
+
             $notification = new Notification(
                 $payload,
                 $deviceToken,
@@ -73,6 +81,7 @@ class ApplePushNotificationController extends Controller
 
             $notifications[] = $notification;
         }
+
 
         $client = new Client($authProvider, $production = true, [
             CURLOPT_SSL_VERIFYPEER => false
