@@ -76,9 +76,16 @@ class ApplePushNotificationController extends Controller
 
         foreach ($request->get('devices') as $deviceToken) {
             $notification = new Notification($payload, $deviceToken);
-            $notification->setPushType('voip');
+
+            // ⚠️ Bắt buộc khi dùng voip hoặc push silent/background
+            $notification->setPushType('voip'); // tương đương: apns-push-type: voip
+
+            // ⚠️ Topic là bundle id hoặc VOIP bundle id
+            $notification->setTopic('com.getflycrm.voip'); // tương đương: apns-topic
+
             $notifications[] = $notification;
         }
+
 
         $client = new Client($authProvider, $production = true, [CURLOPT_SSL_VERIFYPEER => false]);
 
