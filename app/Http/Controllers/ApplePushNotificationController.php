@@ -63,11 +63,11 @@ class ApplePushNotificationController extends Controller
         $notifications = [];
 
         foreach ($request->get('devices') as $deviceToken) {
-            \Log::info('Preparing push notification', [
+            Log::info('Preparing push notification', [
                 'device_token' => $deviceToken,
                 'push_type' => $pushType,
                 'apns_topic' => $apnsTopic,
-                'payload' => $payload->getPayload(),
+                'payload' => json_encode($payload, JSON_PRETTY_PRINT)
             ]);
 
             $notification = new Notification(
@@ -81,6 +81,7 @@ class ApplePushNotificationController extends Controller
 
             $notifications[] = $notification;
         }
+
 
 
         $client = new Client($authProvider, $production = true, [
