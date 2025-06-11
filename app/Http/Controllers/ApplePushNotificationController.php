@@ -15,22 +15,9 @@ use Ramsey\Uuid\Uuid;
 
 class ApplePushNotificationController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {}
 
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     * @throws InvalidPayloadException
-     * @throws ValidationException
-     * @author Phạm Quang Linh <linhpq@getflycrm.com>
-     * @since 13/12/2023 2:27 pm
-     */
     public function pushNotification(Request $request): JsonResponse
     {
         $this->validate($request, [
@@ -42,34 +29,28 @@ class ApplePushNotificationController extends Controller
             'push_type' => 'string',
         ]);
 
+        // Kiểm tra access_key nếu cần
         // if ($request->get('access_key') !== env('APP_KEY')) {
-        //     return response()->json([
-        //         'message' => 'Key không chính xác'
-        //     ], 401);
+        //     return response()->json(['message' => 'Key không chính xác'], 401);
         // }
 
         $options = [
-            'key_id' => env('APN_KEY_ID'), // The Key ID obtained from Apple developer account
-            'team_id' => env('APN_TEAM_ID'), // The Team ID obtained from Apple developer account
-            'app_bundle_id' => env('APN_BUNDLE_ID'), // The bundle ID for app obtained from Apple developer account
-            'private_key_path' => base_path('private_key.p8'), // Path to private key
-            'private_key_secret' => null // Private key secret
+            'key_id' => env('APN_KEY_ID'),
+            'team_id' => env('APN_TEAM_ID'),
+            'app_bundle_id' => env('APN_BUNDLE_ID'),
+            'private_key_path' => base_path('private_key.p8'),
+            'private_key_secret' => null
         ];
 
         $authProvider = Token::create($options);
 
-        $payload = Payload::create();
+        $payload = Payload::create()
+            ->setSound($request->get('sound', 'default'))
+            ->setContentAvailability(1)
+            ->setCustomValue('uuid', Uuid::uuid4());
 
-        $payload->setSound($request->get('sound') ?? 'default');
-        $payload->setPushType($request->get('push_type') ?? 'voip');
-        $payload->setContentAvailability(1);
-
-        $payload->setCustomValue('uuid', Uuid::uuid4());
-
-        $apnsData = $request->get('apn_data');
-
-        foreach ($apnsData as $key => $apn_value) {
-            $payload->setCustomValue($key, $apn_value);
+        foreach ($request->get('apn_data') as $key => $value) {
+            $payload->setCustomValue($key, $value);
         }
 
         $notifications = [];
@@ -77,39 +58,26 @@ class ApplePushNotificationController extends Controller
         foreach ($request->get('devices') as $deviceToken) {
             $notification = new Notification($payload, $deviceToken);
 
-            // ⚠️ Bắt buộc khi dùng voip hoặc push silent/background
-            $notification->setPushType('voip'); // tương đương: apns-push-type: voip
-
-            // ⚠️ Topic là bundle id hoặc VOIP bundle id
-            $notification->setTopic('com.getflycrm.voip'); // tương đương: apns-topic
+            // Thiết lập header thủ công (thay vì gọi setPushType)
+            $notification->setCustomClientOptions([
+                'headers' => [
+                    'apns-push-type' => $request->get('push_type', 'voip'),
+                    'apns-topic' => env('APN_BUNDLE_ID', 'com.getflycrm.voip'),
+                ]
+            ]);
 
             $notifications[] = $notification;
         }
 
-
-        $client = new Client($authProvider, $production = true, [CURLOPT_SSL_VERIFYPEER => false]);
+        $client = new Client($authProvider, $production = true, [
+            CURLOPT_SSL_VERIFYPEER => false
+        ]);
 
         $client->addNotifications($notifications);
-
         $responses = $client->push();
 
         $responseData = [];
         foreach ($responses as $response) {
-
-            $response->getDeviceToken();
-
-            $response->getApnsId();
-
-
-            $response->getStatusCode();
-
-            $response->getReasonPhrase();
-
-            $response->getErrorReason();
-
-            $response->getErrorDescription();
-            $response->get410Timestamp();
-
             $responseData[] = [
                 'device_token' => $response->getDeviceToken(),
                 'apns_id' => $response->getApnsId(),
