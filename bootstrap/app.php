@@ -23,8 +23,12 @@ $app = new Laravel\Lumen\Application(
     dirname(__DIR__)
 );
 
- $app->withFacades();
-class_alias(\Illuminate\Support\Facades\Log::class, 'Log');
+$app->withFacades();
+
+if (!class_exists('Log')) {
+    class_alias(\Illuminate\Support\Facades\Log::class, 'Log');
+}
+
 
 // $app->withEloquent();
 
